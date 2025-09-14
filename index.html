@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GML-RiffGen V1.0 - Guitar Riff Generator</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.3);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .control-group {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        select, input, button {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #ff6b6b;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #ff5252;
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        .riff-display {
+            background: rgba(0,0,0,0.5);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 16px;
+            line-height: 1.6;
+            min-height: 100px;
+            white-space: pre-wrap;
+        }
+        .play-controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .play-controls button {
+            width: auto;
+            padding: 15px 25px;
+            margin: 0 5px;
+            font-size: 16px;
+        }
+        .export-btn {
+            background: #4CAF50 !important;
+        }
+        .export-btn:hover {
+            background: #45a049 !important;
+        }
+        .info {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        .debug {
+            background: rgba(255,255,0,0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 12px;
+            border: 1px solid rgba(255,255,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎸 GML-RiffGen V1.0</h1>
+        <p style="text-align: center;">Professional Guitar Riff Generator with MusicXML Export</p>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label>Key:</label>
+                <select id="key">
+                    <option value="E">E Minor</option>
+                    <option value="A">A Minor</option>
+                    <option value="D">D Minor</option>
+                    <option value="G">G Major</option>
+                    <option value="C">C Major</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>Style:</label>
+                <select id="style">
+                    <option value="rock">Rock</option>
+                    <option value="metal">Metal</option>
+                    <option value="blues">Blues</option>
+                    <option value="punk">Punk</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>Tempo (BPM):</label>
+                <input type="range" id="tempo" min="80" max="180" value="120">
+                <span id="tempoValue">120</span>
+            </div>
+            
+            <div class="control-group">
+                <label>Length:</label>
+                <select id="length">
+                    <option value="4">4 beats</option>
+                    <option value="8" selected>8 beats</option>
+                    <option value="16">16 beats</option>
+                </select>
+            </div>
+        </div>
+        
+        <div style="text-align: center;">
+            <button onclick="generateRiff()" id="generateBtn">🎵 Generate New Riff</button>
+        </div>
+        
+        <div class="riff-display" id="riffDisplay">
+Click "Generate New Riff" to create your first guitar riff...
+        </div>
+        
+        <div class="play-controls">
+            <button onclick="testAudio()" id="testBtn">🔊 Test Audio</button>
+            <button onclick="playRiff()" id="playBtn" disabled>▶️ Play Riff</button>
+            <button onclick="stopRiff()" id="stopBtn" disabled>⏹️ Stop</button>
+            <button onclick="exportMusicXML()" id="exportBtn" class="export-btn" disabled>📄 Export MusicXML</button>
+        </div>
+        
+        <div class="debug" id="debugInfo">
+Debug info will appear here...
+        </div>
+        
+        <div class="info">
+            <h3>🎸 How to Use:</h3>
+            <p><strong>1. Test Audio:</strong> Click "Test Audio" first - should hear beep</p>
+            <p><strong>2. Generate:</strong> Click "Generate New Riff" - Export button should enable</p>
+            <p><strong>3. Play:</strong> Click "Play Riff" to hear the generated music</p>
+            <p><strong>4. Export:</strong> Click "Export MusicXML" - downloads .musicxml file</p>
+            <p><strong>5. Open:</strong> Use downloaded file in MuseScore, Sibelius, or Finale</p>
+        </div>
+    </div>
+
+    <script>
+        let audioContext;
+        let currentRiff = [];
+        let isPlaying = false;
+        
+        // Update tempo display
+        document.getElementById('tempo').addEventListener('input', function() {
+            document.getElementById('tempoValue').textContent = this.value;
+        });
+        
+        function debugLog(message) {
+            const debugDiv = document.getElementById('debugInfo');
+            debugDiv.textContent = new Date().toLocaleTimeString() + ': ' + message;
+            console.log('RiffGen:', message);
+        }
+        
+        function initAudio() {
+            try {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    debugLog('Audio context created successfully');
+                }
+                return true;
+            } catch (error) {
+                debugLog('Audio context failed: ' + error.message);
+                return false;
+            }
+        }
+        
+        function testAudio() {
+            debugLog('Testing audio...');
+            
+            if (!initAudio()) {
+                alert('Audio not supported in this browser');
+                return;
+            }
+            
+            if (audioContext.state === 'suspended') {
+                audioContext.resume().then(() => {
+                    debugLog('Audio context resumed');
+                    playTestTone();
+                });
+            } else {
+                playTestTone();
+            }
+        }
+        
+        function playTestTone() {
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.1);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 1);
+                
+                debugLog('Test tone played successfully');
+                
+            } catch (error) {
+                debugLog('Test tone failed: ' + error.message);
+            }
+        }
+        
+        // Note frequencies
+        const noteFreqs = {
+            'E2': 82.41, 'F2': 87.31, 'G2': 98.00, 'A2': 110.00, 'B2': 123.47,
+            'C3': 130.81, 'D3': 146.83, 'E3': 164.81, 'F3': 174.61, 'G3': 196.00, 
+            'A3': 220.00, 'B3': 246.94, 'C4': 261.63, 'D4': 293.66, 'E4': 329.63
+        };
+        
+        // Musical scales
+        const scales = {
+            'E': ['E2', 'G2', 'A2', 'B2', 'D3', 'E3'],
+            'A': ['A2', 'C3', 'D3', 'E3', 'G3', 'A3'],
+            'D': ['D3', 'F3', 'G3', 'A3', 'C4', 'D4'],
+            'G': ['G2', 'B2', 'C3', 'D3', 'F3', 'G3'],
+            'C': ['C3', 'E3', 'F3', 'G3', 'B3', 'C4']
+        };
+        
+        function generateRiff() {
+            debugLog('Generating riff...');
+            
+            const key = document.getElementById('key').value;
+            const style = document.getElementById('style').value;
+            const tempo = parseInt(document.getElementById('tempo').value);
+            const length = parseInt(document.getElementById('length').value);
+            
+            const scale = scales[key];
+            const beatDuration = 60 / tempo;
+            
+            currentRiff = [];
+            let riffText = `🎸 Generated ${style.toUpperCase()} riff in ${key} at ${tempo} BPM\n\n`;
+            
+            // Generate riff pattern
+            for (let i = 0; i < length; i++) {
+                const noteIndex = Math.floor(Math.random() * scale.length);
+                const note = scale[noteIndex];
+                const startTime = i * beatDuration;
+                const duration = beatDuration * 0.8;
+                
+                currentRiff.push({
+                    note: note,
+                    frequency: noteFreqs[note],
+                    startTime: startTime,
+                    duration: duration
+                });
+                
+                riffText += `Beat ${i + 1}: ${note}\n`;
+            }
+            
+            riffText += `\nNotes: ${currentRiff.map(n => n.note).join(' - ')}\n`;
+            riffText += `Total duration: ${(length * beatDuration).toFixed(1)} seconds\n`;
+            riffText += `\n✅ Ready to play and export!`;
+            
+            document.getElementById('riffDisplay').textContent = riffText;
+            document.getElementById('playBtn').disabled = false;
+            document.getElementById('exportBtn').disabled = false;
+            
+            debugLog(`Generated ${currentRiff.length} notes - Export enabled`);
+        }
+        
+        function playNote(frequency, startTime, duration) {
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(frequency, startTime);
+                oscillator.type = 'sawtooth';
+                
+                gainNode.gain.setValueAtTime(0, startTime);
+                gainNode.gain.linearRampToValueAtTime(0.2, startTime + 0.01);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+                
+                oscillator.start(startTime);
+                oscillator.stop(startTime + duration);
+                
+            } catch (error) {
+                debugLog('Play note failed: ' + error.message);
+            }
+        }
+        
+        function playRiff() {
+            if (!audioContext || currentRiff.length === 0) {
+                debugLog('Cannot play: no audio context or riff');
+                return;
+            }
+            
+            debugLog('Playing riff...');
+            
+            if (audioContext.state === 'suspended') {
+                audioContext.resume().then(() => {
+                    playRiffNow();
+                });
+            } else {
+                playRiffNow();
+            }
+        }
+        
+        function playRiffNow() {
+            isPlaying = true;
+            document.getElementById('playBtn').disabled = true;
+            document.getElementById('stopBtn').disabled = false;
+            
+            const startTime = audioContext.currentTime + 0.1;
+            
+            currentRiff.forEach(noteData => {
+                if (noteData.frequency) {
+                    playNote(noteData.frequency, startTime + noteData.startTime, noteData.duration);
+                }
+            });
+            
+            const totalDuration = Math.max(...currentRiff.map(n => n.startTime + n.duration));
+            setTimeout(() => {
+                stopRiff();
+            }, (totalDuration + 0.5) * 1000);
+            
+            debugLog('Riff playback started');
+        }
+        
+        function stopRiff() {
+            isPlaying = false;
+            document.getElementById('playBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            debugLog('Riff playback stopped');
+        }
+
+        function exportMusicXML() {
+            debugLog('=== STARTING MUSICXML EXPORT ===');
+            
+            if (!currentRiff || currentRiff.length === 0) {
+                debugLog('ERROR: No riff data to export');
+                alert('Please generate a riff first!');
+                return;
+            }
+            
+            try {
+                const key = document.getElementById('key').value;
+                const tempo = parseInt(document.getElementById('tempo').value);
+                const style = document.getElementById('style').value;
+                
+                if (!key || !tempo || !style) {
+                    throw new Error('Missing required parameters for export');
+                }
+                
+                debugLog(`Exporting: ${currentRiff.length} notes, ${key} ${style} at ${tempo} BPM`);
+                
+                const musicXML = generateMusicXMLContent(currentRiff, key, tempo, style);
+                
+                if (!musicXML || musicXML.length < 100) {
+                    throw new Error('Generated XML appears invalid (too short)');
+                }
+                
+                downloadMusicXML(musicXML, key, style);
+                
+            } catch (error) {
+                debugLog('EXPORT FAILED: ' + error.message);
+                alert('Export failed: ' + error.message);
+            }
+        }
+        
+        function generateMusicXMLContent(riff, key, tempo, style) {
+            debugLog('Generating MusicXML content with proper measure boundaries...');
+            
+            const noteMap = {
+                'E2': {step: 'E', octave: 2}, 'F2': {step: 'F', octave: 2}, 'G2': {step: 'G', octave: 2}, 
+                'A2': {step: 'A', octave: 2}, 'B2': {step: 'B', octave: 2}, 'C3': {step: 'C', octave: 3},
+                'D3': {step: 'D', octave: 3}, 'E3': {step: 'E', octave: 3}, 'F3': {step: 'F', octave: 3},
+                'G3': {step: 'G', octave: 3}, 'A3': {step: 'A', octave: 3}, 'B3': {step: 'B', octave: 3},
+                'C4': {step: 'C', octave: 4}, 'D4': {step: 'D', octave: 4}, 'E4': {step: 'E', octave: 4}
+            };
+            
+            const keyFifths = {
+                'C': 0, 'G': 1, 'D': 2, 'A': 3, 'E': 4, 'F': -1,
+                'Am': 0, 'Em': 1, 'Bm': 2, 'Dm': -1
+            };
+            
+            const divisions = 480;
+            const quarterNoteDuration = 60 / tempo;
+            const beatsPerMeasure = 4;
+            const divisionsPerMeasure = beatsPerMeasure * divisions;
+            
+            const processedNotes = riff.map(noteData => {
+                const noteDurationInBeats = noteData.duration / quarterNoteDuration;
+                return {
+                    ...noteData,
+                    durationInDivisions: Math.round(noteDurationInBeats * divisions),
+                    noteType: getNoteType(noteDurationInBeats)
+                };
+            });
+            
+            const totalDivisions = processedNotes.reduce((sum, note) => sum + note.durationInDivisions, 0);
+            const totalMeasures = Math.ceil(totalDivisions / divisionsPerMeasure);
+            
+            debugLog(`Total notes: ${riff.length}, Total measures needed: ${totalMeasures}`);
+            
+            const safeTitle = `GML-RiffGen ${style.charAt(0).toUpperCase() + style.slice(1)} Riff in ${key}`;
+            
+            let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+<score-partwise version="3.1">
+  <work>
+    <work-title>${safeTitle}</work-title>
+  </work>
+  <identification>
+    <creator type="composer">GML-RiffGen V1.0</creator>
+    <creator type="software">Generative Music Lab</creator>
+  </identification>
+  <part-list>
+    <score-part id="P1">
+      <part-name>Guitar</part-name>
+      <score-instrument id="I1">
+        <instrument-name>Electric Guitar</instrument-name>
+      </score-instrument>
+    </score-part>
+  </part-list>
+  <part id="P1">`;
+
+            let currentMeasure = 1;
+            let currentMeasureDuration = 0;
+            let noteIndex = 0;
+            let validNotes = 0;
+            
+            while (noteIndex < processedNotes.length && currentMeasure <= totalMeasures) {
+                xml += `
+    <measure number="${currentMeasure}">`;
+                
+                if (currentMeasure === 1) {
+                    xml += `
+      <attributes>
+        <divisions>${divisions}</divisions>
+        <key>
+          <fifths>${keyFifths[key] || 0}</fifths>
+          <mode>${key.includes('m') ? 'minor' : 'major'}</mode>
+        </key>
+        <time>
+          <beats>${beatsPerMeasure}</beats>
+          <beat-type>4</beat-type>
+        </time>
+        <clef>
+          <sign>G</sign>
+          <line>2</line>
+        </clef>
+      </attributes>
+      <direction placement="above">
+        <direction-type>
+          <metronome>
+            <beat-unit>quarter</beat-unit>
+            <per-minute>${tempo}</per-minute>
+          </metronome>
+        </direction-type>
+      </direction>`;
+                }
+                
+                currentMeasureDuration = 0;
+                
+                while (noteIndex < processedNotes.length && 
+                       currentMeasureDuration < divisionsPerMeasure) {
+                    
+                    const noteData = processedNotes[noteIndex];
+                    const noteInfo = noteMap[noteData.note];
+                    
+                    if (noteInfo && noteInfo.step && noteInfo.octave) {
+                        if (currentMeasureDuration + noteData.durationInDivisions <= divisionsPerMeasure) {
+                            xml += `
+      <note>
+        <pitch>
+          <step>${noteInfo.step}</step>
+          <octave>${noteInfo.octave}</octave>
+        </pitch>
+        <duration>${noteData.durationInDivisions}</duration>
+        <voice>1</voice>
+        <type>${noteData.noteType}</type>
+      </note>`;
+                            
+                            currentMeasureDuration += noteData.durationInDivisions;
+                            validNotes++;
+                            noteIndex++;
+                        } else {
+                            const remainingDuration = divisionsPerMeasure - currentMeasureDuration;
+                            if (remainingDuration > 0) {
+                                const restType = getRestType(remainingDuration / divisions);
+                                xml += `
+      <note>
+        <rest/>
+        <duration>${remainingDuration}</duration>
+        <voice>1</voice>
+        <type>${restType}</type>
+      </note>`;
+                            }
+                            break;
+                        }
+                    } else {
+                        debugLog(`WARNING: Skipped invalid note: ${noteData.note}`);
+                        noteIndex++;
+                    }
+                }
+                
+                const remainingDuration = divisionsPerMeasure - currentMeasureDuration;
+                if (remainingDuration > 0) {
+                    const restType = getRestType(remainingDuration / divisions);
+                    xml += `
+      <note>
+        <rest/>
+        <duration>${remainingDuration}</duration>
+        <voice>1</voice>
+        <type>${restType}</type>
+      </note>`;
+                }
+                
+                xml += `
+    </measure>`;
+                
+                currentMeasure++;
+            }
+            
+            xml += `
+  </part>
+</score-partwise>`;
+            
+            debugLog(`Generated XML: ${totalMeasures} measures, ${validNotes}/${riff.length} valid notes`);
+            return xml;
+        }
+        
+        function getNoteType(durationInBeats) {
+            if (durationInBeats >= 3.5) return 'whole';
+            if (durationInBeats >= 1.5) return 'half';
+            if (durationInBeats >= 0.75) return 'quarter';
+            if (durationInBeats >= 0.375) return 'eighth';
+            return 'sixteenth';
+        }
+        
+        function getRestType(durationInBeats) {
+            if (durationInBeats >= 3.5) return 'whole';
+            if (durationInBeats >= 1.5) return 'half';
+            if (durationInBeats >= 0.75) return 'quarter';
+            if (durationInBeats >= 0.375) return 'eighth';
+            return 'sixteenth';
+        }
+        
+        function downloadMusicXML(xmlContent, key, style) {
+            debugLog('Attempting download...');
+            
+            try {
+                const blob = new Blob([xmlContent], { 
+                    type: 'application/vnd.recordare.musicxml+xml' 
+                });
+                
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                
+                const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+                const safeKey = key.replace(/[^a-zA-Z0-9]/g, '');
+                const safeStyle = style.replace(/[^a-zA-Z0-9]/g, '');
+                const filename = `gml-riffgen_${safeKey}_${safeStyle}_${timestamp}.musicxml`;
+                
+                link.href = url;
+                link.download = filename;
+                link.style.display = 'none';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+                
+                debugLog(`SUCCESS: Downloaded ${filename}`);
+                
+            } catch (downloadError) {
+                debugLog('Download failed, trying fallback: ' + downloadError.message);
+                
+                try {
+                    const newWindow = window.open('', '_blank');
+                    if (newWindow) {
+                        newWindow.document.write(`
+                            <html>
+                            <head><title>MusicXML Export</title></head>
+                            <body>
+                                <h3>Copy this MusicXML content:</h3>
+                                <textarea style="width:100%;height:400px;">${xmlContent}</textarea>
+                                <p>Save as .musicxml file</p>
+                            </body>
+                            </html>
+                        `);
+                        debugLog('SUCCESS: Opened XML in new window (fallback)');
+                    } else {
+                        throw new Error('Popup blocked');
+                    }
+                } catch (fallbackError) {
+                    debugLog('All export methods failed: ' + fallbackError.message);
+                    alert('Export failed. Check browser console for XML content.');
+                    console.log('MusicXML Export:', xmlContent);
+                }
+            }
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', function() {
+            debugLog('GML-RiffGen V1.0 loaded - click Test Audio first');
+        });
+    </script>
+</body>
+</html>
