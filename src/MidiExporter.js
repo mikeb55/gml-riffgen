@@ -1,0 +1,84 @@
+const fs = require('fs');
+
+class MidiExporter {
+  constructor() {
+    this.ticksPerQuarter = 480;
+    this.instruments = {
+      guitar: 24,
+      violinI: 40,
+      violinII: 40,
+      viola: 41,
+      cello: 42
+    };
+  }
+  
+  exportToMidi(composition) {
+    // For now, create a C major scale test
+    const bytes = [
+      // MIDI Header
+      0x4D, 0x54, 0x68, 0x64,  // MThd
+      0x00, 0x00, 0x00, 0x06,  // header size: 6
+      0x00, 0x01,              // format: 1
+      0x00, 0x02,              // tracks: 2
+      0x01, 0xE0,              // ticks per quarter: 480
+      
+      // Track 1 - Tempo
+      0x4D, 0x54, 0x72, 0x6B,  // MTrk
+      0x00, 0x00, 0x00, 0x0B,  // track size: 11 bytes
+      0x00, 0xFF, 0x51, 0x03,  // tempo event
+      0x07, 0xA1, 0x20,        // 120 BPM
+      0x00, 0xFF, 0x2F, 0x00,  // end of track
+      
+      // Track 2 - C Major Scale
+      0x4D, 0x54, 0x72, 0x6B,  // MTrk
+      0x00, 0x00, 0x00, 0x4B,  // track size: 75 bytes
+      0x00, 0xC0, 0x28,        // program change: violin
+      
+      // C note
+      0x00, 0x90, 0x3C, 0x50,  // C4 on
+      0x81, 0x70, 0x80, 0x3C, 0x00,  // C4 off after 240 ticks
+      
+      // D note
+      0x00, 0x90, 0x3E, 0x50,  // D4 on
+      0x81, 0x70, 0x80, 0x3E, 0x00,  // D4 off
+      
+      // E note
+      0x00, 0x90, 0x40, 0x50,  // E4 on
+      0x81, 0x70, 0x80, 0x40, 0x00,  // E4 off
+      
+      // F note
+      0x00, 0x90, 0x41, 0x50,  // F4 on
+      0x81, 0x70, 0x80, 0x41, 0x00,  // F4 off
+      
+      // G note
+      0x00, 0x90, 0x43, 0x50,  // G4 on
+      0x81, 0x70, 0x80, 0x43, 0x00,  // G4 off
+      
+      // A note
+      0x00, 0x90, 0x45, 0x50,  // A4 on
+      0x81, 0x70, 0x80, 0x45, 0x00,  // A4 off
+      
+      // B note
+      0x00, 0x90, 0x47, 0x50,  // B4 on
+      0x81, 0x70, 0x80, 0x47, 0x00,  // B4 off
+      
+      // High C note
+      0x00, 0x90, 0x48, 0x50,  // C5 on
+      0x83, 0x60, 0x80, 0x48, 0x00,  // C5 off (held longer)
+      
+      0x00, 0xFF, 0x2F, 0x00   // end of track
+    ];
+    
+    return Buffer.from(bytes);
+  }
+  
+  saveMidiFile(data, filename) {
+    fs.writeFileSync(filename, data);
+    console.log('✅ MIDI saved: ' + filename);
+    console.log('📊 Size: ' + data.length + ' bytes');
+    console.log('🎵 Contains: C major scale (8 notes)');
+    return filename;
+  }
+}
+
+module.exports = MidiExporter;
