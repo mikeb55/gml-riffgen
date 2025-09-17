@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>gml-riffgen - Enhanced</title>
+    <!-- Original styles/scripts would go here -->
+    
+    <!-- GML Improvements -->
+    <script src="gml-shared-memory.js"></script>
+    <script src="batch-operations-universal.js"></script>
+    <script src="ui-improvements-universal.js"></script>
+    
+    <style>
+        .gml-enhanced-badge {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #4CAF50;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="gml-enhanced-badge">Enhanced ✓</div>
+    
+    <h1>gml-riffgen</h1>
+    <p>Press SPACE to generate, R to regenerate</p>
+    
+    <div id="controls">
+        <!-- App controls here -->
+        <button onclick="alert('Generate function needs to be connected')">Generate</button>
+    </div>
+    
+    <script>
+        // Initialize improvements
+        if (typeof initBatchOperations !== 'undefined') {
+            initBatchOperations(() => ({ data: 'test', timestamp: Date.now() }));
+        }
+        
+        // Initialize memory
+        if (typeof GMLMemory !== 'undefined') {
+            const memory = new GMLMemory('gml-riffgen');
+            console.log('Cross-app memory initialized');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RiffGen Enhanced</title>
+</head>
+<body style="font-family: Arial; padding: 40px; background: #f0f0f0;">
+    <h1 style="color: #4CAF50;">✨ RiffGen Enhanced</h1>
+    <p>Keyboard: SPACE = Generate, R = Regenerate</p>
+    
+    <select id="qty" style="padding: 10px;">
+        <option value="1">1 riff</option>
+        <option value="3">3 riffs</option>
+        <option value="5">5 riffs</option>
+    </select>
+    <button onclick="generate()" style="padding: 10px 20px; background: #4CAF50; color: white; border: none; border-radius: 5px;">
+        Generate Riffs
+    </button>
+    
+    <div id="output" style="margin-top: 20px; padding: 20px; background: white; border-radius: 5px;"></div>
+    
+    <script>
+        function generate() {
+            const qty = document.getElementById('qty').value;
+            const output = document.getElementById('output');
+            output.innerHTML = '<h3>Generated ' + qty + ' riff(s):</h3>';
+            
+            for(let i = 0; i < qty; i++) {
+                const notes = [60, 62, 64, 65, 67].map(n => n + Math.floor(Math.random() * 12));
+                output.innerHTML += '<div style="border: 1px solid #ddd; padding: 10px; margin: 10px 0;">Riff ' + (i+1) + ': [' + notes.join(', ') + ']</div>';
+            }
+        }
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.code === 'Space') { e.preventDefault(); generate(); }
+            if (e.code === 'KeyR') generate();
+        });
+    </script>
+</body>
+</html>
