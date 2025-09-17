@@ -1,6 +1,5 @@
 /**
  * BULLETPROOF Fret Position Optimizer for GML-RiffGen
- * Ensures playable guitar TAB generation
  * @version 1.2.1
  */
 
@@ -9,7 +8,6 @@ class FretPositionOptimizer {
         this.tuning = ['E2', 'A2', 'D3', 'G3', 'B3', 'E4'];
         this.midiTuning = [40, 45, 50, 55, 59, 64];
         this.MAX_STRETCH = 4;
-        this.PREFERRED_POSITION_RANGE = [0, 12];
         this.MAX_FRET = 19;
     }
 
@@ -33,8 +31,7 @@ class FretPositionOptimizer {
             }
             
             if (previousString !== -1) {
-                const stringJump = Math.abs(string - previousString);
-                score -= stringJump * 2;
+                score -= Math.abs(string - previousString) * 2;
             }
             
             candidates.push({ string, fret, score });
@@ -47,7 +44,29 @@ class FretPositionOptimizer {
         candidates.sort((a, b) => b.score - a.score);
         return candidates[0];
     }
+
+    optimizeRiff(notes) {
+        const result = [];
+        let previousFret = -1;
+        let previousString = -1;
+        
+        for (const note of notes) {
+            const position = this.findOptimalPosition(note, previousFret, previousString);
+            result.push({
+                midi: note,
+                string: position.string,
+                fret: position.fret,
+                error: position.error || false
+            });
+            
+            if (!position.error) {
+                previousFret = position.fret;
+                previousString = position.string;
+            }
+        }
+        
+        return result;
+    }
 }
 
-console.log('FretPositionOptimizer loaded successfully');
 module.exports = FretPositionOptimizer;
