@@ -1,0 +1,151 @@
+<!-- 
+BULLETPROOF Integration Instructions:
+1. Open your index.html
+2. Find line ~430 where RiffGenerator class starts
+3. Add the FretPositionOptimizer class BEFORE RiffGenerator
+4. Replace the generateRiffData method around line ~630
+-->
+
+<!-- ADD THIS CLASS BEFORE RiffGenerator (around line 430) -->
+<script>
+// Embedded FretPositionOptimizer for browser
+class FretPositionOptimizer {
+    constructor() {
+        this.midiTuning = [40, 45, 50, 55, 59, 64]; // E2, A2, D3, G3, B3, E4
+        this.stringFrequencies = [82.41, 110.00, 146.83, 196.00, 246.94, 329.63];
+        this.stringNames = ['E', 'A', 'D', 'G', 'B', 'e'];
+        this.MAX_STRETCH = 4;
+        this.MAX_FRET = 19;
+    }
+
+    optimizePositions(notes) {
+        const optimized = [];
+        let previousFret = -1;
+        let previousString = -1;
+        
+        for (const note of notes) {
+            const candidates = [];
+            
+            // Find all possible positions for this frequency
+            for (let s = 0; s < 6; s++) {
+                const fret = Math.round(12 * Math.log2(note.frequency / this.stringFrequencies[s]));
+                
+                if (fret < 0 || fret > this.MAX_FRET) continue;
+                
+                let score = 100;
+                
+                // Prefer open strings
+                if (fret === 0) score += 20;
+                
+                // Prefer middle positions
+                if (fret >= 3 && fret <= 7) score += 15;
+                if (fret > 12) score -= (fret - 12) * 2;
+                
+                // Minimize hand movement
+                if (previousFret !== -1) {
+                    const movement = Math.abs(fret - previousFret);
+                    if (movement === 0) score += 25;
+                    else if (movement <= this.MAX_STRETCH) score += 20 - movement * 3;
+                    else score -= movement * 5;
+                }
+                
+                // Prefer adjacent strings
+                if (previousString !== -1) {
+                    score -= Math.abs(s - previousString) * 2;
+                }
+                
+                candidates.push({
+                    string: this.stringNames[s],
+                    fret: fret,
+                    score: score
+                });
+            }
+            
+            // Sort by score and pick best
+            candidates.sort((a, b) => b.score - a.score);
+            const best = candidates[0] || { string: 'E', fret: 0 };
+            
+            optimized.push({
+                ...note,
+                string: best.string,
+                fret: best.fret
+            });
+            
+            previousFret = best.fret;
+            previousString = this.stringNames.indexOf(best.string);
+        }
+        
+        return optimized;
+    }
+}
+</script>
+
+<!-- REPLACE generateRiffData method (around line 630-700) with this: -->
+generateRiffData(params, seed) {
+    // Seeded random number generator
+    const random = this.seededRandom(seed);
+    
+    const scale = this.scales[params.scale];
+    const rootNote = this.noteFrequencies[params.key];
+    const beatsPerMeasure = 4;
+    const totalBeats = params.measures * beatsPerMeasure;
+    
+    const notes = [];
+    let currentBeat = 0;
+    
+    // Generate notes first
+    while (currentBeat < totalBeats) {
+        if (random() > 0.2) {
+            const scaleIndex = Math.floor(random() * scale.length);
+            const octaveOffset = Math.floor(random() * 3) - 1;
+            const semitoneOffset = scale[scaleIndex];
+            
+            const frequency = rootNote * Math.pow(2, (semitoneOffset + octaveOffset * 12) / 12);
+            
+            const durationOptions = this.getDurationOptions(params.complexity);
+            const duration = durationOptions[Math.floor(random() * durationOptions.length)];
+            
+            notes.push({
+                frequency: frequency,
+                duration: duration,
+                beat: currentBeat
+            });
+            
+            currentBeat += duration;
+        } else {
+            currentBeat += 0.25;
+        }
+    }
+    
+    // BULLETPROOF OPTIMIZER INTEGRATION
+    let optimizedNotes;
+    try {
+        // Use optimizer if available
+        if (typeof FretPositionOptimizer !== 'undefined') {
+            const optimizer = new FretPositionOptimizer();
+            optimizedNotes = optimizer.optimizePositions(notes);
+            console.log('✅ Using optimized fret positions');
+        } else {
+            // Fallback to old method
+            optimizedNotes = notes.map(note => ({
+                ...note,
+                ...this.frequencyToFret(note.frequency)
+            }));
+            console.warn('⚠️ Optimizer not found, using fallback');
+        }
+    } catch (error) {
+        console.error('Optimizer error, using fallback:', error);
+        optimizedNotes = notes.map(note => ({
+            ...note,
+            ...this.frequencyToFret(note.frequency)
+        }));
+    }
+    
+    return {
+        notes: optimizedNotes,
+        key: params.key,
+        scale: params.scale,
+        tempo: params.tempo,
+        measures: params.measures
+    };
+}

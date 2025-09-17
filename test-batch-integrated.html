@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Batch Test - RiffGen Style</title>
+    <script src="batch-simple.js"></script>
+    <script src="../gml-shared-memory.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        h1 { color: #333; }
+    </style>
+</head>
+<body>
+    <h1>RiffGen with Batch Operations</h1>
+    
+    <div id="batchContainer"></div>
+    
+    <script>
+    // Simulate RiffGen's generate function
+    function generateRiff() {
+        const notes = [];
+        const numNotes = 4 + Math.floor(Math.random() * 4);
+        const startNote = 48 + Math.floor(Math.random() * 24);
+        
+        for (let i = 0; i < numNotes; i++) {
+            notes.push(startNote + Math.floor(Math.random() * 12));
+        }
+        
+        return {
+            notes: notes,
+            tempo: 100 + Math.floor(Math.random() * 40),
+            key: ['C', 'G', 'D', 'A', 'E'][Math.floor(Math.random() * 5)],
+            timestamp: new Date().toISOString()
+        };
+    }
+    
+    // Override format function for riff display
+    window.formatResult = function(result) {
+        let html = '<div style="font-family: monospace;">';
+        html += '<p><strong>Notes:</strong> [' + result.notes.join(', ') + ']</p>';
+        html += '<p><strong>Tempo:</strong> ' + result.tempo + ' BPM</p>';
+        html += '<p><strong>Key:</strong> ' + result.key + '</p>';
+        html += '</div>';
+        return html;
+    };
+    
+    // Handle selection
+    window.onBatchSelect = function(result) {
+        alert('Selected riff with ' + result.notes.length + ' notes in key of ' + result.key);
+        // Here you would update your main RiffGen display
+    };
+    
+    // Initialize batch controls
+    createBatchControls('batchContainer', generateRiff);
+    </script>
+</body>
+</html>

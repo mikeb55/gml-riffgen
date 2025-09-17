@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GML Memory Test</title>
+    <script src="../gml-shared-memory.js"></script>
+</head>
+<body>
+    <h1>Test Cross-App Memory</h1>
+    <div id="controls"></div>
+    <hr>
+    <button onclick="saveTest()">Save Test Data</button>
+    <button onclick="loadTest()">Load Last Data</button>
+    <div id="output"></div>
+    
+    <script>
+    const memory = new GMLMemory('RiffGen');
+    
+    // Create import button
+    memory.createImportButton('controls', (data) => {
+        document.getElementById('output').innerHTML = 
+            `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+    });
+    
+    function saveTest() {
+        const testData = {
+            notes: [60, 64, 67],
+            tempo: 120,
+            key: 'C'
+        };
+        memory.save(testData, 'riff');
+    }
+    
+    function loadTest() {
+        const data = memory.load();
+        if (data) {
+            document.getElementById('output').innerHTML = 
+                `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+        }
+    }
+    </script>
+</body>
+</html>

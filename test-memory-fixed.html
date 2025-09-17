@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>GML Memory Test</title>
+    <script src="../gml-shared-memory.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        button { padding: 10px; margin: 5px; font-size: 16px; }
+        #output { margin-top: 20px; background: #f0f0f0; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Test Cross-App Memory</h1>
+    <div id="controls"></div>
+    <hr>
+    <button onclick="saveTest()">Save Test Data</button>
+    <button onclick="loadTest()">Load Last Data</button>
+    <div id="output"></div>
+    
+    <script>
+    // Fix the emoji issue in the library
+    window.GMLMemory.prototype.createImportButton = function(targetElementId, callback) {
+        const container = document.getElementById(targetElementId);
+        if (!container) return;
+        
+        const button = document.createElement('button');
+        button.textContent = 'Import Last'; // No emoji
+        button.style.cssText = `
+            padding: 8px 16px;
+            margin: 5px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        `;
+        
+        button.onclick = () => {
+            const data = this.load();
+            if (data) {
+                callback(data);
+            } else {
+                this.showNotification('No saved data found', 'info');
+            }
+        };
+        
+        container.appendChild(button);
+        
+        const hasData = this.load() !== null;
+        button.disabled = !hasData;
+        if (!hasData) {
+            button.style.opacity = '0.5';
+            button.style.cursor = 'not-allowed';
+        }
+    };
+    
+    const memory = new GMLMemory('RiffGen');
+    
+    // Create import button
+    memory.createImportButton('controls', (data) => {
+        document.getElementById('output').innerHTML = 
+            '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+    });
+    
+    function saveTest() {
+        const testData = {
+            notes: [60, 64, 67],
+            tempo: 120,
+            key: 'C'
+        };
+        memory.save(testData, 'riff');
+        document.getElementById('output').innerHTML = 
+            '<p style="color:green;">Saved test data!</p>';
+    }
+    
+    function loadTest() {
+        const data = memory.load();
+        if (data) {
+            document.getElementById('output').innerHTML = 
+                '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+        } else {
+            document.getElementById('output').innerHTML = 
+                '<p style="color:red;">No data found</p>';
+        }
+    }
+    </script>
+</body>
+</html>

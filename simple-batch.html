@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Batch Test</title>
+</head>
+<body>
+    <h1>Batch Generation Test</h1>
+    <select id="quantity">
+        <option value="1">1 option</option>
+        <option value="3">3 options</option>
+        <option value="5">5 options</option>
+    </select>
+    <button onclick="generate()">Generate</button>
+    <div id="results"></div>
+    
+    <script>
+    function generate() {
+        const qty = document.getElementById("quantity").value;
+        const results = document.getElementById("results");
+        results.innerHTML = "";
+        
+        for(let i = 0; i < qty; i++) {
+            const div = document.createElement("div");
+            div.style.cssText = "border: 1px solid #ccc; padding: 10px; margin: 10px 0;";
+            div.innerHTML = "<h3>Option " + (i+1) + "</h3><p>Random: " + Math.random() + "</p>";
+            const btn = document.createElement("button");
+            btn.textContent = "Use This";
+            btn.onclick = function() { alert("Selected option " + (i+1)); };
+            div.appendChild(btn);
+            results.appendChild(div);
+        }
+    }
+    </script>
+</body>
+</html>
