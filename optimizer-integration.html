@@ -149,3 +149,16 @@ generateRiffData(params, seed) {
         measures: params.measures
     };
 }
+
+<!-- GML Template System -->
+<script src="https://raw.githubusercontent.com/mikeb55/-gml-enhancement-suite/main/templates/TemplateSystem.js"></script>
+<script>
+window.addEventListener("DOMContentLoaded", async () => {
+    try {
+        window.templateSystem = new TemplateSystem();
+        await window.templateSystem.init();
+        let c = document.getElementById("controls") || document.querySelector(".controls") || document.body;
+        window.templateSystem.createDropdown(c.id || "controls", (g,t) => console.log("Template loaded:", g));
+    } catch(e) { console.log("Template System load error:", e); }
+});
+</script>
