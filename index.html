@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RiffGen v1.1 - GML Melody Generator (QuintetComposer Ready)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #f59e0b;
+            --secondary: #d97706;
+            --accent: #fbbf24;
+            --bg-dark: #1c1917;
+            --bg-medium: #292524;
+            --bg-light: #44403c;
+            --text-primary: #fef3c7;
+            --text-secondary: #fed7aa;
+            --success: #10b981;
+            --error: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1c1917 0%, #292524 50%, #1c1917 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(28, 25, 23, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid var(--primary);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--error);
+        }
+
+        .status-dot.connected {
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Main Layout */
+        .main-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 300px 1fr 320px;
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        /* Controls Panel */
+        .controls-panel {
+            background: rgba(41, 37, 36, 0.6);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .control-section {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            letter-spacing: 0.05em;
+        }
+
+        .control-group {
+            margin-bottom: 1rem;
+        }
+
+        .control-label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .control-value {
+            float: right;
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: var(--bg-light);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--primary);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        select, input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 0.5rem;
+            background: var(--bg-dark);
+            border: 1px solid var(--bg-light);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Riff Display */
+        .riff-display {
+            background: rgba(41, 37, 36, 0.6);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .display-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .display-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            background: rgba(245, 158, 11, 0.2);
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            background: rgba(245, 158, 11, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--bg-dark);
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary);
+        }
+
+        /* Note Grid */
+        .note-grid {
+            flex: 1;
+            background: var(--bg-dark);
+            border-radius: 8px;
+            padding: 1rem;
+            overflow: auto;
+            min-height: 400px;
+        }
+
+        .measure {
+            display: inline-block;
+            margin-right: 2rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: rgba(245, 158, 11, 0.05);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 6px;
+        }
+
+        .measure-number {
+            font-size: 0.75rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .notes {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .note {
+            padding: 0.5rem;
+            background: rgba(245, 158, 11, 0.2);
+            border: 1px solid var(--primary);
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            min-width: 40px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .note:hover {
+            background: rgba(245, 158, 11, 0.4);
+            transform: scale(1.05);
+        }
+
+        .note.rest {
+            background: transparent;
+            border-style: dashed;
+            opacity: 0.5;
+        }
+
+        .note.accent {
+            background: var(--primary);
+            color: var(--bg-dark);
+            font-weight: bold;
+        }
+
+        /* Pattern Library */
+        .pattern-library {
+            background: rgba(41, 37, 36, 0.6);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .pattern-card {
+            padding: 1rem;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .pattern-card:hover {
+            background: rgba(245, 158, 11, 0.2);
+            border-color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .pattern-card.active {
+            background: rgba(245, 158, 11, 0.3);
+            border-color: var(--accent);
+            border-width: 2px;
+        }
+
+        .pattern-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .pattern-desc {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Playback Controls */
+        .playback-controls {
+            background: rgba(28, 25, 23, 0.9);
+            border-top: 1px solid rgba(245, 158, 11, 0.2);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .play-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: none;
+            color: var(--bg-dark);
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .play-btn:hover {
+            transform: scale(1.1);
+            background: var(--secondary);
+        }
+
+        .tempo-display {
+            padding: 0.5rem 1rem;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(245, 158, 11, 0.3);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            background: var(--primary);
+            color: var(--bg-dark);
+            border-radius: 8px;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+            z-index: 1000;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(400px); }
+            to { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">🎸</div>
+            <span>RiffGen</span>
+        </div>
+        <div class="connection-status">
+            <span class="status-dot" id="connectionDot"></span>
+            <span id="connectionText">Standalone Mode</span>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Controls Panel -->
+        <div class="controls-panel">
+            <div class="control-section">
+                <div class="section-title">Pattern Settings</div>
+                
+                <div class="control-group">
+                    <label class="control-label">
+                        Style
+                    </label>
+                    <select id="style" onchange="riffGen.updateStyle(this.value)">
+                        <option value="bebop">Bebop</option>
+                        <option value="blues">Blues</option>
+                        <option value="pentatonic">Pentatonic</option>
+                        <option value="chromatic">Chromatic</option>
+                        <option value="modal">Modal</option>
+                        <option value="arpeggiated">Arpeggiated</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">
+                        Key Center
+                    </label>
+                    <select id="keyCenter" onchange="riffGen.updateKey(this.value)">
+                        <option value="C">C</option>
+                        <option value="G">G</option>
+                        <option value="D">D</option>
+                        <option value="A">A</option>
+                        <option value="E">E</option>
+                        <option value="B">B</option>
+                        <option value="F">F</option>
+                        <option value="Bb">Bb</option>
+                        <option value="Eb">Eb</option>
+                        <option value="Ab">Ab</option>
+                        <option value="Db">Db</option>
+                        <option value="Gb">Gb</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">
+                        Scale Type
+                    </label>
+                    <select id="scaleType" onchange="riffGen.updateScale(this.value)">
+                        <option value="major">Major</option>
+                        <option value="minor">Natural Minor</option>
+                        <option value="harmonic-minor">Harmonic Minor</option>
+                        <option value="melodic-minor">Melodic Minor</option>
+                        <option value="dorian">Dorian</option>
+                        <option value="mixolydian">Mixolydian</option>
+                        <option value="lydian">Lydian</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <div class="section-title">Generation Parameters</div>
+                
+                <div class="control-group">
+                    <label class="control-label">
+                        Note Density
+                        <span class="control-value" id="densityValue">5</span>
+                    </label>
+                    <input type="range" id="density" min="1" max="10" value="5" 
+                           oninput="riffGen.updateDensity(this.value)">
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">
+                        Range (Octaves)
+                        <span class="control-value" id="rangeValue">2</span>
+                    </label>
+                    <input type="range" id="range" min="1" max="4" value="2" 
+                           oninput="riffGen.updateRange(this.value)">
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">
+                        Syncopation
+                        <span class="control-value" id="syncopationValue">3</span>
+                    </label>
+                    <input type="range" id="syncopation" min="0" max="10" value="3" 
+                           oninput="riffGen.updateSyncopation(this.value)">
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">
+                        Measures
+                    </label>
+                    <input type="number" id="measures" min="1" max="32" value="4" 
+                           onchange="riffGen.updateMeasures(this.value)">
+                </div>
+            </div>
+
+            <div class="control-section">
+                <div class="section-title">Rhythm Pattern</div>
+                
+                <div class="control-group">
+                    <label class="control-label">
+                        Time Signature
+                    </label>
+                    <select id="timeSignature" onchange="riffGen.updateTimeSignature(this.value)">
+                        <option value="4/4">4/4</option>
+                        <option value="3/4">3/4</option>
+                        <option value="6/8">6/8</option>
+                        <option value="5/4">5/4</option>
+                        <option value="7/8">7/8</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">
+                        Subdivision
+                    </label>
+                    <select id="subdivision" onchange="riffGen.updateSubdivision(this.value)">
+                        <option value="8">Eighth Notes</option>
+                        <option value="16">Sixteenth Notes</option>
+                        <option value="8t">Eighth Triplets</option>
+                        <option value="16t">Sixteenth Triplets</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Riff Display -->
+        <div class="riff-display">
+            <div class="display-header">
+                <div class="display-title">Generated Riff</div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="riffGen.generate()">Generate New</button>
+                    <button class="btn" onclick="riffGen.mutate()">Mutate</button>
+                    <button class="btn" onclick="riffGen.exportMIDI()">Export MIDI</button>
+                    <button class="btn" onclick="riffGen.exportJSON()">Export JSON</button>
+                    <button class="btn" onclick="riffGen.exportForQuintet()" style="background: linear-gradient(135deg, #f59e0b, #8b5cf6);">Export to Quintet</button>
+                </div>
+            </div>
+            
+            <div class="note-grid" id="noteGrid">
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                </div>
+                <!-- Generated notes will appear here -->
+            </div>
+        </div>
+
+        <!-- Pattern Library -->
+        <div class="pattern-library">
+            <div class="section-title">Pattern Library</div>
+            
+            <div class="pattern-card active" onclick="riffGen.loadPattern('ascending')">
+                <div class="pattern-name">Ascending Run</div>
+                <div class="pattern-desc">Upward scalar motion</div>
+            </div>
+            
+            <div class="pattern-card" onclick="riffGen.loadPattern('descending')">
+                <div class="pattern-name">Descending Run</div>
+                <div class="pattern-desc">Downward scalar motion</div>
+            </div>
+            
+            <div class="pattern-card" onclick="riffGen.loadPattern('arpeggio')">
+                <div class="pattern-name">Arpeggio</div>
+                <div class="pattern-desc">Chord tone patterns</div>
+            </div>
+            
+            <div class="pattern-card" onclick="riffGen.loadPattern('blues-lick')">
+                <div class="pattern-name">Blues Lick</div>
+                <div class="pattern-desc">Classic blues phrase</div>
+            </div>
+            
+            <div class="pattern-card" onclick="riffGen.loadPattern('bebop-line')">
+                <div class="pattern-name">Bebop Line</div>
+                <div class="pattern-desc">Jazz bebop phrase</div>
+            </div>
+            
+            <div class="pattern-card" onclick="riffGen.loadPattern('pentatonic-box')">
+                <div class="pattern-name">Pentatonic Box</div>
+                <div class="pattern-desc">Box pattern movement</div>
+            </div>
+            
+            <div class="pattern-card" onclick="riffGen.loadPattern('sequence')">
+                <div class="pattern-name">Sequence</div>
+                <div class="pattern-desc">Repeating intervallic pattern</div>
+            </div>
+            
+            <div class="pattern-card" onclick="riffGen.loadPattern('call-response')">
+                <div class="pattern-name">Call & Response</div>
+                <div class="pattern-desc">Question and answer phrase</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Playback Controls -->
+    <div class="playback-controls">
+        <button class="play-btn" id="playBtn" onclick="riffGen.togglePlayback()">▶</button>
+        <div class="tempo-display">
+            <span id="tempoDisplay">120 BPM</span>
+        </div>
+        <button class="btn" onclick="riffGen.stop()">Stop</button>
+        <button class="btn" onclick="riffGen.loop()">Loop</button>
+    </div>
+
+    <script>
+        // RiffGen - Melody Generation System
+        class RiffGen {
+            constructor() {
+                this.version = '1.1.0';  // Updated for QuintetComposer integration
+                this.connected = false;
+                this.dashboardOrigin = null;
+                this.connectedApps = new Set();
+                
+                // Musical state
+                this.state = {
+                    style: 'bebop',
+                    keyCenter: 'C',
+                    scaleType: 'major',
+                    density: 5,
+                    range: 2,
+                    syncopation: 3,
+                    measures: 4,
+                    timeSignature: '4/4',
+                    subdivision: '8',
+                    tempo: 120,
+                    currentPattern: 'ascending',
+                    generatedRiff: null
+                };
+                
+                // Scale definitions
+                this.scales = {
+                    major: [0, 2, 4, 5, 7, 9, 11],
+                    minor: [0, 2, 3, 5, 7, 8, 10],
+                    'harmonic-minor': [0, 2, 3, 5, 7, 8, 11],
+                    'melodic-minor': [0, 2, 3, 5, 7, 9, 11],
+                    dorian: [0, 2, 3, 5, 7, 9, 10],
+                    mixolydian: [0, 2, 4, 5, 7, 9, 10],
+                    lydian: [0, 2, 4, 6, 7, 9, 11],
+                    pentatonic: [0, 2, 4, 7, 9],
+                    blues: [0, 3, 5, 6, 7, 10]
+                };
+                
+                // Note names
+                this.noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+                
+                // Playback
+                this.isPlaying = false;
+                this.looping = false;
+                
+                this.init();
+            }
+            
+            init() {
+                console.log('RiffGen v1.1 initializing...');
+                
+                // Set up Dashboard communication
+                this.setupDashboardConnection();
+                
+                // Generate initial riff after DOM is ready
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', () => {
+                        setTimeout(() => this.generate(), 500);
+                    });
+                } else {
+                    setTimeout(() => this.generate(), 500);
+                }
+            }
+            
+            setupDashboardConnection() {
+                // Listen for messages from Dashboard
+                window.addEventListener('message', this.handleMessage.bind(this));
+                
+                // Check if opened from Dashboard
+                if (window.opener || window.parent !== window) {
+                    console.log('Detecting Dashboard connection...');
+                    this.attemptConnection();
+                }
+            }
+            
+            attemptConnection() {
+                // Send handshake to potential Dashboard
+                const target = window.opener || window.parent;
+                target.postMessage({
+                    type: 'HANDSHAKE_RESPONSE',
+                    source: 'riffgen',
+                    version: this.version,
+                    capabilities: ['generate', 'mutate', 'export']
+                }, '*');
+            }
+            
+            handleMessage(event) {
+                const message = event.data;
+                if (!message.type) return;
+                
+                console.log('Received message:', message.type);
+                
+                switch(message.type) {
+                    case 'HANDSHAKE':
+                        this.handleHandshake(event);
+                        break;
+                    case 'PING':
+                        this.handlePing(event);
+                        break;
+                    case 'GENERATE':
+                        this.handleGenerateRequest(message);
+                        break;
+                    case 'PARAMETER_UPDATE':
+                    case 'PARAMETER_SYNC':
+                        this.handleParameterUpdate(message);
+                        break;
+                    case 'HARMONY_INPUT':
+                        this.handleHarmonyInput(message);
+                        break;
+                    case 'EXPORT_REQUEST':
+                        this.handleExportRequest(message);
+                        break;
+                    case 'RESET':
+                        this.reset();
+                        break;
+                    // QuintetComposer integration
+                    case 'QUINTET_REQUEST':
+                        this.handleQuintetRequest(message);
+                        break;
+                    case 'GET_GUITAR_PART':
+                        this.sendGuitarPart(event.source, event.origin);
+                        break;
+                }
+            }
+            
+            handleQuintetRequest(message) {
+                // QuintetComposer is requesting guitar part
+                console.log('QuintetComposer requesting guitar part');
+                
+                if (!this.state.generatedRiff) {
+                    this.generate();
+                }
+                
+                // Send guitar part to QuintetComposer
+                setTimeout(() => {
+                    this.sendToQuintet({
+                        type: 'GUITAR_PART_READY',
+                        source: 'riffgen',
+                        data: this.formatForQuintet()
+                    });
+                }, 100);
+            }
+            
+            sendGuitarPart(source, origin) {
+                // Direct response to QuintetComposer
+                const guitarPart = this.formatForQuintet();
+                
+                source.postMessage({
+                    type: 'GUITAR_PART_DATA',
+                    source: 'riffgen',
+                    data: guitarPart
+                }, origin);
+            }
+            
+            formatForQuintet() {
+                // Format riff data for QuintetComposer
+                if (!this.state.generatedRiff) {
+                    return null;
+                }
+                
+                const guitarPart = {
+                    instrument: 'Electric Guitar',
+                    channel: 1,
+                    measures: [],
+                    tempo: this.state.tempo,
+                    timeSignature: this.state.timeSignature,
+                    keySignature: this.state.keyCenter
+                };
+                
+                // Convert riff to QuintetComposer format
+                this.state.generatedRiff.measures.forEach(measure => {
+                    const quintetMeasure = {
+                        number: measure.number,
+                        notes: measure.notes.map(note => ({
+                            pitch: note.pitch,
+                            duration: note.duration,
+                            isRest: note.isRest,
+                            velocity: note.isAccent ? 100 : 80,
+                            articulation: note.isAccent ? 'accent' : 'normal'
+                        }))
+                    };
+                    guitarPart.measures.push(quintetMeasure);
+                });
+                
+                return guitarPart;
+            }
+            
+            sendToQuintet(message) {
+                // Send message to QuintetComposer
+                if (window.opener || window.parent !== window) {
+                    const target = window.opener || window.parent;
+                    target.postMessage(message, '*');
+                }
+                
+                // Also broadcast to any connected QuintetComposer
+                this.broadcastToApp('quintet', message);
+            }
+            
+            broadcastToApp(appName, message) {
+                // Broadcast to specific app type
+                if (this.connectedApps.has(appName)) {
+                    console.log(`Broadcasting to ${appName}:`, message.type);
+                    // Implementation depends on connection method
+                }
+            }
+            
+            handleHandshake(event) {
+                console.log('Dashboard handshake received');
+                this.connected = true;
+                this.dashboardOrigin = event.origin;
+                
+                // Check if it's from QuintetComposer
+                if (event.data.source === 'quintet') {
+                    this.connectedApps.add('quintet');
+                    console.log('Connected to QuintetComposer');
+                }
+                
+                // Update connection status (with null check)
+                const connectionDot = document.getElementById('connectionDot');
+                const connectionText = document.getElementById('connectionText');
+                
+                if (connectionDot) {
+                    connectionDot.classList.add('connected');
+                }
+                if (connectionText) {
+                    connectionText.textContent = event.data.source === 'quintet' ? 
+                        'Connected to QuintetComposer' : 'Connected to Dashboard';
+                }
+                
+                // Send response
+                event.source.postMessage({
+                    type: 'HANDSHAKE_RESPONSE',
+                    source: 'riffgen',
+                    version: this.version
+                }, event.origin);
+                
+                // Notify ready
+                setTimeout(() => {
+                    event.source.postMessage({
+                        type: 'APP_READY',
+                        source: 'riffgen',
+                        capabilities: ['generate', 'mutate', 'export', 'harmony-aware', 'quintet-compatible']
+                    }, event.origin);
+                }, 100);
+            }
+            
+            handlePing(event) {
+                event.source.postMessage({
+                    type: 'PONG',
+                    source: 'riffgen',
+                    timestamp: Date.now()
+                }, event.origin);
+            }
+            
+            handleGenerateRequest(message) {
+                const params = message.params || {};
+                if (params.tempo) this.state.tempo = params.tempo;
+                if (params.keyCenter) this.state.keyCenter = params.keyCenter;
+                if (params.measures) this.state.measures = params.measures;
+                
+                this.generate();
+            }
+            
+            handleParameterUpdate(message) {
+                const { param, value } = message;
+                
+                // Map Dashboard parameters to RiffGen parameters
+                const paramMap = {
+                    tempo: 'tempo',
+                    keyCenter: 'keyCenter',
+                    timeSignature: 'timeSignature',
+                    complexity: 'density'
+                };
+                
+                const mappedParam = paramMap[param] || param;
+                if (this.state.hasOwnProperty(mappedParam)) {
+                    this.state[mappedParam] = value;
+                    this.updateUI(mappedParam, value);
+                }
+            }
+            
+            handleHarmonyInput(message) {
+                // Receive harmony data from TriadGen
+                console.log('Received harmony data:', message.data);
+                
+                // Generate melody based on harmony
+                if (message.data.chord) {
+                    this.generateOverChord(message.data.chord);
+                }
+            }
+            
+            handleExportRequest(message) {
+                const format = message.format || 'json';
+                let exportData;
+                
+                if (format === 'midi' || format === 'musicxml') {
+                    exportData = this.exportMIDI();
+                } else {
+                    exportData = this.exportJSON();
+                }
+                
+                // Send back to Dashboard
+                this.sendToDashboard({
+                    type: 'EXPORT_DATA',
+                    source: 'riffgen',
+                    format: format,
+                    data: exportData
+                });
+            }
+            
+            sendToDashboard(message) {
+                if (!this.connected) return;
+                
+                const target = window.opener || window.parent;
+                target.postMessage(message, this.dashboardOrigin || '*');
+            }
+            
+            // Generation Methods
+            generate() {
+                this.showLoading();
+                
+                // Generate riff based on current settings
+                const riff = this.generateRiff();
+                this.state.generatedRiff = riff;
+                
+                // Display the riff
+                this.displayRiff(riff);
+                
+                // Send to Dashboard if connected
+                if (this.connected) {
+                    this.sendToDashboard({
+                        type: 'MELODY_GENERATED',
+                        source: 'riffgen',
+                        data: {
+                            melody: riff,
+                            key: this.state.keyCenter,
+                            scale: this.state.scaleType,
+                            measures: this.state.measures
+                        }
+                    });
+                }
+                
+                this.hideLoading();
+                this.showNotification('New riff generated!');
+            }
+            
+            generateRiff() {
+                const measures = [];
+                const beatsPerMeasure = parseInt(this.state.timeSignature.split('/')[0]);
+                const scale = this.getScale();
+                
+                for (let m = 0; m < this.state.measures; m++) {
+                    const measure = {
+                        number: m + 1,
+                        notes: []
+                    };
+                    
+                    // Generate notes based on density
+                    const noteCount = Math.floor(this.state.density * beatsPerMeasure / 2);
+                    
+                    for (let n = 0; n < noteCount; n++) {
+                        const note = this.generateNote(scale, m, n);
+                        measure.notes.push(note);
+                    }
+                    
+                    measures.push(measure);
+                }
+                
+                return { measures, timestamp: Date.now() };
+            }
+            
+            generateNote(scale, measureIndex, noteIndex) {
+                // Pattern-based note generation
+                let noteNum;
+                const octave = 4 + Math.floor(Math.random() * this.state.range);
+                
+                switch(this.state.currentPattern) {
+                    case 'ascending':
+                        noteNum = scale[noteIndex % scale.length];
+                        break;
+                    case 'descending':
+                        noteNum = scale[scale.length - 1 - (noteIndex % scale.length)];
+                        break;
+                    case 'arpeggio':
+                        const chordTones = [0, 2, 4, 7]; // 1-3-5-7
+                        noteNum = scale[chordTones[noteIndex % chordTones.length] % scale.length];
+                        break;
+                    default:
+                        // Random from scale
+                        noteNum = scale[Math.floor(Math.random() * scale.length)];
+                }
+                
+                // Add root note offset
+                const rootOffset = this.noteNames.indexOf(this.state.keyCenter);
+                noteNum = (noteNum + rootOffset) % 12;
+                
+                // Determine if rest
+                const isRest = Math.random() < (0.1 - this.state.density * 0.01);
+                
+                // Determine accent
+                const isAccent = !isRest && (noteIndex === 0 || Math.random() < this.state.syncopation * 0.05);
+                
+                return {
+                    pitch: isRest ? null : this.noteNames[noteNum] + octave,
+                    duration: this.state.subdivision === '8' ? 0.5 : 0.25,
+                    isRest,
+                    isAccent
+                };
+            }
+            
+            generateOverChord(chord) {
+                // Generate melody that fits the chord
+                console.log(`Generating melody over ${chord}`);
+                
+                // Parse chord to get chord tones
+                const chordTones = this.parseChord(chord);
+                
+                // Generate melody emphasizing chord tones
+                this.state.currentPattern = 'arpeggio';
+                this.generate();
+            }
+            
+            parseChord(chordSymbol) {
+                // Simple chord parsing (expand as needed)
+                const root = chordSymbol.match(/[A-G][#b]?/)[0];
+                const quality = chordSymbol.includes('m') ? 'minor' : 'major';
+                
+                return {
+                    root,
+                    quality,
+                    tones: quality === 'major' ? [0, 4, 7] : [0, 3, 7]
+                };
+            }
+            
+            getScale() {
+                let scale = this.scales[this.state.scaleType];
+                
+                // Use pentatonic for certain styles
+                if (this.state.style === 'blues') {
+                    scale = this.scales.blues;
+                } else if (this.state.style === 'pentatonic') {
+                    scale = this.scales.pentatonic;
+                }
+                
+                return scale;
+            }
+            
+            mutate() {
+                if (!this.state.generatedRiff) {
+                    this.generate();
+                    return;
+                }
+                
+                // Mutate existing riff
+                const riff = JSON.parse(JSON.stringify(this.state.generatedRiff));
+                
+                riff.measures.forEach(measure => {
+                    measure.notes.forEach(note => {
+                        if (!note.isRest && Math.random() < 0.3) {
+                            // Randomly alter pitch
+                            const scale = this.getScale();
+                            const newIndex = Math.floor(Math.random() * scale.length);
+                            const rootOffset = this.noteNames.indexOf(this.state.keyCenter);
+                            const noteNum = (scale[newIndex] + rootOffset) % 12;
+                            const octave = parseInt(note.pitch.slice(-1));
+                            note.pitch = this.noteNames[noteNum] + octave;
+                        }
+                    });
+                });
+                
+                this.state.generatedRiff = riff;
+                this.displayRiff(riff);
+                this.showNotification('Riff mutated!');
+            }
+            
+            // Display Methods
+            displayRiff(riff) {
+                const grid = document.getElementById('noteGrid');
+                grid.innerHTML = '';
+                
+                riff.measures.forEach(measure => {
+                    const measureDiv = document.createElement('div');
+                    measureDiv.className = 'measure';
+                    
+                    const measureNumber = document.createElement('div');
+                    measureNumber.className = 'measure-number';
+                    measureNumber.textContent = `Measure ${measure.number}`;
+                    measureDiv.appendChild(measureNumber);
+                    
+                    const notesDiv = document.createElement('div');
+                    notesDiv.className = 'notes';
+                    
+                    measure.notes.forEach(note => {
+                        const noteDiv = document.createElement('div');
+                        noteDiv.className = 'note';
+                        
+                        if (note.isRest) {
+                            noteDiv.classList.add('rest');
+                            noteDiv.textContent = '—';
+                        } else {
+                            if (note.isAccent) {
+                                noteDiv.classList.add('accent');
+                            }
+                            noteDiv.textContent = note.pitch;
+                        }
+                        
+                        notesDiv.appendChild(noteDiv);
+                    });
+                    
+                    measureDiv.appendChild(notesDiv);
+                    grid.appendChild(measureDiv);
+                });
+            }
+            
+            // UI Update Methods
+            updateStyle(value) {
+                this.state.style = value;
+                this.generate();
+            }
+            
+            updateKey(value) {
+                this.state.keyCenter = value;
+                this.generate();
+            }
+            
+            updateScale(value) {
+                this.state.scaleType = value;
+                this.generate();
+            }
+            
+            updateDensity(value) {
+                this.state.density = parseInt(value);
+                document.getElementById('densityValue').textContent = value;
+                this.generate();
+            }
+            
+            updateRange(value) {
+                this.state.range = parseInt(value);
+                document.getElementById('rangeValue').textContent = value;
+            }
+            
+            updateSyncopation(value) {
+                this.state.syncopation = parseInt(value);
+                document.getElementById('syncopationValue').textContent = value;
+            }
+            
+            updateMeasures(value) {
+                this.state.measures = parseInt(value);
+                this.generate();
+            }
+            
+            updateTimeSignature(value) {
+                this.state.timeSignature = value;
+                this.generate();
+            }
+            
+            updateSubdivision(value) {
+                this.state.subdivision = value;
+                this.generate();
+            }
+            
+            updateUI(param, value) {
+                // Update UI elements when parameters change from Dashboard
+                const element = document.getElementById(param);
+                if (element) {
+                    element.value = value;
+                }
+                
+                // Update display values
+                if (param === 'tempo') {
+                    const tempoDisplay = document.getElementById('tempoDisplay');
+                    if (tempoDisplay) {
+                        tempoDisplay.textContent = `${value} BPM`;
+                    }
+                }
+                
+                // Update value displays for sliders
+                const valueElements = {
+                    'density': 'densityValue',
+                    'range': 'rangeValue',
+                    'syncopation': 'syncopationValue'
+                };
+                
+                if (valueElements[param]) {
+                    const valueElement = document.getElementById(valueElements[param]);
+                    if (valueElement) {
+                        valueElement.textContent = value;
+                    }
+                }
+            }
+            
+            // Pattern Methods
+            loadPattern(patternName) {
+                // Update active pattern in UI
+                document.querySelectorAll('.pattern-card').forEach(card => {
+                    card.classList.remove('active');
+                });
+                event.target.closest('.pattern-card').classList.add('active');
+                
+                this.state.currentPattern = patternName;
+                this.generate();
+            }
+            
+            // Export Methods
+            exportMIDI() {
+                if (!this.state.generatedRiff) {
+                    this.showNotification('No riff to export!');
+                    return null;
+                }
+                
+                // Enhanced MIDI export for QuintetComposer compatibility
+                const midiData = {
+                    format: 'midi',
+                    version: this.version,
+                    instrument: 'Electric Guitar',
+                    tracks: [{
+                        name: 'RiffGen Electric Guitar',
+                        channel: 1,
+                        program: 30, // Distortion Guitar
+                        events: []
+                    }],
+                    tempo: this.state.tempo,
+                    timeSignature: this.state.timeSignature,
+                    keySignature: this.state.keyCenter,
+                    metadata: {
+                        generator: 'RiffGen v1.1.0',
+                        style: this.state.style,
+                        scale: this.state.scaleType,
+                        pattern: this.state.currentPattern
+                    }
+                };
+                
+                let time = 0;
+                this.state.generatedRiff.measures.forEach(measure => {
+                    measure.notes.forEach(note => {
+                        if (!note.isRest) {
+                            midiData.tracks[0].events.push({
+                                type: 'noteOn',
+                                time: time,
+                                pitch: note.pitch,
+                                velocity: note.isAccent ? 100 : 80
+                            });
+                            midiData.tracks[0].events.push({
+                                type: 'noteOff',
+                                time: time + note.duration,
+                                pitch: note.pitch
+                            });
+                        }
+                        time += note.duration;
+                    });
+                });
+                
+                // Download as JSON (would be converted to actual MIDI in production)
+                this.downloadJSON(midiData, 'riffgen-guitar-v1.1.json');
+                return midiData;
+            }
+            
+            exportForQuintet() {
+                // Special export format for QuintetComposer
+                const quintetData = {
+                    format: 'quintet',
+                    version: '1.1.0',
+                    part: 'guitar',
+                    data: this.formatForQuintet(),
+                    timestamp: new Date().toISOString()
+                };
+                
+                this.downloadJSON(quintetData, 'riffgen-quintet-export.json');
+                
+                // Also send to QuintetComposer if connected
+                if (this.connectedApps.has('quintet')) {
+                    this.sendToQuintet({
+                        type: 'GUITAR_PART_EXPORT',
+                        data: quintetData
+                    });
+                }
+                
+                return quintetData;
+            }
+            
+            exportJSON() {
+                if (!this.state.generatedRiff) {
+                    this.showNotification('No riff to export!');
+                    return null;
+                }
+                
+                const exportData = {
+                    version: this.version,
+                    timestamp: new Date().toISOString(),
+                    settings: this.state,
+                    riff: this.state.generatedRiff
+                };
+                
+                this.downloadJSON(exportData, 'riff-data.json');
+                return exportData;
+            }
+            
+            downloadJSON(data, filename) {
+                const blob = new Blob([JSON.stringify(data, null, 2)], {
+                    type: 'application/json'
+                });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                this.showNotification(`Exported as ${filename}`);
+            }
+            
+            // Playback Methods
+            togglePlayback() {
+                if (this.isPlaying) {
+                    this.pause();
+                } else {
+                    this.play();
+                }
+            }
+            
+            play() {
+                if (!this.state.generatedRiff) {
+                    this.generate();
+                    return;
+                }
+                
+                this.isPlaying = true;
+                document.getElementById('playBtn').textContent = '⏸';
+                console.log('Playing riff...');
+                
+                // Simple visual playback indicator
+                let noteIndex = 0;
+                const allNotes = document.querySelectorAll('.note');
+                
+                const playInterval = setInterval(() => {
+                    if (!this.isPlaying || noteIndex >= allNotes.length) {
+                        clearInterval(playInterval);
+                        this.stop();
+                        return;
+                    }
+                    
+                    // Highlight current note
+                    allNotes.forEach(n => n.style.background = '');
+                    allNotes[noteIndex].style.background = 'var(--accent)';
+                    noteIndex++;
+                }, 60000 / this.state.tempo / 2); // Simple timing
+            }
+            
+            pause() {
+                this.isPlaying = false;
+                document.getElementById('playBtn').textContent = '▶';
+            }
+            
+            stop() {
+                this.isPlaying = false;
+                this.looping = false;
+                document.getElementById('playBtn').textContent = '▶';
+                
+                // Clear highlighting
+                document.querySelectorAll('.note').forEach(n => {
+                    n.style.background = '';
+                });
+            }
+            
+            loop() {
+                this.looping = !this.looping;
+                if (this.looping) {
+                    this.showNotification('Looping enabled');
+                    this.play();
+                } else {
+                    this.showNotification('Looping disabled');
+                }
+            }
+            
+            // Utility Methods
+            reset() {
+                this.state = {
+                    style: 'bebop',
+                    keyCenter: 'C',
+                    scaleType: 'major',
+                    density: 5,
+                    range: 2,
+                    syncopation: 3,
+                    measures: 4,
+                    timeSignature: '4/4',
+                    subdivision: '8',
+                    tempo: 120,
+                    currentPattern: 'ascending',
+                    generatedRiff: null
+                };
+                
+                // Reset UI
+                document.getElementById('style').value = 'bebop';
+                document.getElementById('keyCenter').value = 'C';
+                document.getElementById('scaleType').value = 'major';
+                document.getElementById('density').value = 5;
+                document.getElementById('range').value = 2;
+                document.getElementById('syncopation').value = 3;
+                document.getElementById('measures').value = 4;
+                
+                this.generate();
+            }
+            
+            showLoading() {
+                const loadingElement = document.getElementById('loading');
+                if (loadingElement) {
+                    loadingElement.classList.add('active');
+                }
+            }
+            
+            hideLoading() {
+                const loadingElement = document.getElementById('loading');
+                if (loadingElement) {
+                    loadingElement.classList.remove('active');
+                }
+            }
+            
+            showNotification(message) {
+                // Check if DOM is ready
+                if (!document.body) {
+                    console.log('Notification:', message);
+                    return;
+                }
+                
+                const notification = document.createElement('div');
+                notification.className = 'notification';
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.animation = 'slideIn 0.3s ease reverse';
+                    setTimeout(() => notification.remove(), 300);
+                }, 2000);
+            }
+        }
+        
+        // Initialize RiffGen when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                window.riffGen = new RiffGen();
+            });
+        } else {
+            window.riffGen = new RiffGen();
+        }
+    </script>
+</body>
+</html>
